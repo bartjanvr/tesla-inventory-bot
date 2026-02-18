@@ -6,7 +6,7 @@ from playwright.async_api import async_playwright
 import requests
 
 # ===================== CONFIG =====================
-TESLA_URL = "https://www.tesla.com/nl_NL/inventory/used/my?CATEGORY=PRAWD,PAWD,LRAWD&arrangeby=plh&zip=2013WL&range=0"
+TESLA_URL = "https://www.tesla.com/nl_NL/inventory/used/my?CATEGORY=PAWD,PRAWD,LRAWD&arrangeby=plh&zip=2013WL&range=0"
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFtuNUR2cjtH92CvXnbIR8jSi2m2bQ6gC0AF0l4nQPg37cUJpL4LoMKMo68VKxwzA/exec"
 
 # ===================== SCRAPER =====================
