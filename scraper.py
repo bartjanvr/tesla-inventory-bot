@@ -14,47 +14,38 @@ async def scrape():
     cars = []
 
     async with async_playwright() as p:
-        browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
+        browser = await p.chromium.launch(
+            headless=True,
+            args=["--no-sandbox"]
+        )
 
-        # Visit Tesla page
+        context = await browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                       "AppleWebKit/537.36 (KHTML, like Gecko) "
+                       "Chrome/120.0.0.0 Safari/537.36",
+            locale="nl-NL"
+        )
+
+        page = await context.new_page()
+
         await page.goto(TESLA_URL, timeout=60000)
-        await page.wait_for_timeout(8000)  # wait for content to load
+        await page.wait_for_load_state("networkidle")
+
+        # Scroll to force lazy load
+        await page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        await page.wait_for_timeout(5000)
 
         html = await page.content()
-        soup = BeautifulSoup(html, "lxml")
 
-        # Tesla lists cars in divs with data-testid="inventory-card"
+        print("Page length:", len(html))  # DEBUG
+
+        soup = BeautifulSoup(html, "lxml")
         cards = soup.find_all("div", {"data-testid": "inventory-card"})
 
-        for card in cards:
-            title = card.find("h5")
-            price = card.find("span", string=lambda x: x and "€" in x)
-            mileage = card.find("li", string=lambda x: x and "km" in x)
-            first_reg = card.find("li", string=lambda x: x and "Datum eerste registratie" in x)
-            link = card.find("a", href=True)
-            range_km = card.find("li", string=lambda x: x and "km" in x and "actieradius" in x.lower())
-            color = card.find("li", string=lambda x: x and "kleur" in x.lower())
-            wheels = card.find("li", string=lambda x: x and "wielen" in x.lower())
-            interior = card.find("li", string=lambda x: x and "interieur" in x.lower())
-            towbar = card.find("li", string=lambda x: x and "trekhaak" in x.lower())
-
-            car = {
-                "Link": "https://www.tesla.com" + link["href"] if link else "",
-                "Title": title.text.strip() if title else "",
-                "Price": price.text.strip() if price else "",
-                "Mileage": mileage.text.strip() if mileage else "",
-                "First Registration": first_reg.text.strip() if first_reg else "",
-                "Range": range_km.text.strip() if range_km else "",
-                "Color": color.text.strip() if color else "",
-                "Wheels": wheels.text.strip() if wheels else "",
-                "Interior Color": interior.text.strip() if interior else "",
-                "Has Towbar": towbar.text.strip() if towbar else "",
-            }
-
-            cars.append(car)
+        print("Found cards:", len(cards))  # DEBUG
 
         await browser.close()
+
     return cars
 
 # ===================== GOOGLE SHEETS PUSH =====================
